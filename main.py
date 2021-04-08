@@ -5,6 +5,10 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 
+from pytorch_model_summary import summary
+from torchsummary import summary
+
+
 import torchvision
 import torchvision.transforms as transforms
 
@@ -14,6 +18,8 @@ import argparse
 from models import *
 from utils import progress_bar
 
+# WandB – Import the wandb library
+import wandb
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
@@ -24,6 +30,10 @@ args = parser.parse_args()
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc = 0  # best test accuracy
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
+
+
+# WandB – Initialize a new run
+wandb.init(project="colab")
 
 # Data
 print('==> Preparing data..')
@@ -88,6 +98,8 @@ optimizer = optim.SGD(net.parameters(), lr=args.lr,
                       momentum=0.9, weight_decay=5e-4)
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
 
+#print(summary(net, torch.zeros((1, 3, 32, 32)), show_input=False, show_hierarchical=False))
+#print(summary(net, (3, 32, 32)))
 
 # Training
 def train(epoch):
@@ -109,8 +121,11 @@ def train(epoch):
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
 
-        progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+        progress_bar(batch_idx, len(trainloader), 'Train Loss: %.3f | Train Acc: %.3f%% (%d/%d)'
                      % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+    wandb.log({
+        "Train Accuracy": 100. * correct / len(trainloader.dataset),
+        "Train Loss": train_loss/(batch_idx+1)})
 
 
 def test(epoch):
@@ -132,6 +147,9 @@ def test(epoch):
 
             progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
                          % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+    wandb.log({
+        "Test Accuracy": 100. * correct / len(testloader.dataset),
+        "Test Loss": test_loss/(batch_idx+1)})
 
     # Save checkpoint.
     acc = 100.*correct/total
@@ -147,8 +165,13 @@ def test(epoch):
         torch.save(state, './checkpoint/ckpt.pth')
         best_acc = acc
 
+wandb.watch(net, log="all")
 
 for epoch in range(start_epoch, start_epoch+200):
     train(epoch)
     test(epoch)
     scheduler.step()
+
+# WandB – Save the model checkpoint. This automatically saves a file to the cloud and associates it with the current run.
+torch.save(model.state_dict(), "model.h5")
+wandb.save('net.h5')
