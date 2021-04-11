@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 
 #from pytorch_model_summary import summary
-from torchsummary import summary
+#from torchsummary import summary
 
 
 import torchvision
