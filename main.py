@@ -19,7 +19,7 @@ from models import *
 from utils import progress_bar
 
 # WandB – Import the wandb library
-#import wandb
+import wandb
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
@@ -33,7 +33,7 @@ start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
 
 # WandB – Initialize a new run
-#wandb.init(project="colab")
+wandb.init(project="colab")
 
 # Data
 print('==> Preparing data..')
@@ -123,9 +123,9 @@ def train(epoch):
 
         progress_bar(batch_idx, len(trainloader), 'Train Loss: %.3f | Train Acc: %.3f%% (%d/%d)'
                      % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
-    '''wandb.log({
+    wandb.log({
         "Train Accuracy": 100. * correct / len(trainloader.dataset),
-        "Train Loss": train_loss/(batch_idx+1)})'''
+        "Train Loss": train_loss/(batch_idx+1)})
 
 
 def test(epoch):
@@ -147,9 +147,9 @@ def test(epoch):
 
             progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
                          % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
-    '''wandb.log({
+    wandb.log({
         "Test Accuracy": 100. * correct / len(testloader.dataset),
-        "Test Loss": test_loss/(batch_idx+1)})'''
+        "Test Loss": test_loss/(batch_idx+1)})
 
     # Save checkpoint.
     acc = 100.*correct/total
@@ -165,7 +165,7 @@ def test(epoch):
         torch.save(state, './checkpoint/ckpt.pth')
         best_acc = acc
 
-'''wandb.watch(net, log="all")'''
+wandb.watch(net, log="all")
 
 for epoch in range(start_epoch, start_epoch+200):
     train(epoch)
@@ -174,4 +174,4 @@ for epoch in range(start_epoch, start_epoch+200):
 
 # WandB – Save the model checkpoint. This automatically saves a file to the cloud and associates it with the current run.
 torch.save(model.state_dict(), "model.h5")
-#wandb.save('net.h5')
+wandb.save('net.h5')
